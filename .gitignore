@@ -1,3 +1,5 @@
 server/.idea
 server/target
 server/*.db
+server/*.iml
+.idea/
