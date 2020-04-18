@@ -4,11 +4,11 @@
     <title>Meetup Trivia</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-
     <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -16,10 +16,27 @@
     <a class="navbar-brand" href="#">Meetup Trivia - Admin</a>
 </nav>
 
+<div th:if="${success != null }" class="alert alert-success alert-dismissible fade show" role="alert">
+    <script> $('.alert').alert() </script>
+    <span th:text="${success}"/>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+<div th:if="${fail != null }" class="alert alert-danger alert-dismissible fade show" role="alert">
+    <script> $('.alert').alert() </script>
+    <span th:text="${fail}"/>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+
+
 <div style="margin: 20px">
     <h4>Create new Game</h4>
     <div class="card card-body bg-light">
-        <form action="createNewGame">
+        <form action="admin/createNewGame">
             <div class="form-group">
                 <label for="numRounds">Number of Rounds</label>
                 <input type="number" class="form-control" name="numRounds" id="numRounds" >
@@ -43,9 +60,36 @@
 
     <br/>
     <h4>Move Next Round</h4>
+        <div class="card card-body bg-light">
+            <div>
+                <span>Current Round: </span>
+                <span th:if="${currentRound == null || currentRound == 0}"><b>Game not started</b></span>
+                <span th:if="${currentRound != null && currentRound != 0}" th:text="${currentRound}"></span>
+            </div>
 
+            <form class="form-inline" action="admin/changeRound">
+                <label for="roundNumber" class="sr-only">Round Number</label>
+                <input type="number" class="form-control" min="0" id="roundNumber" name="roundNumber" th:value="${currentRound == null ? '0' : currentRound }">
+                &nbsp;
+                <button type="submit" class="btn btn-primary">Change Round</button>
+            </form>
+
+        </div>
     <br/>
     <h4>Current Game Info</h4>
+    <div class="card" style="width: 50%;" th:each="round : ${questions}">
+        <div class="card-body">
+            <h5 class="card-title" th:text="'Round ' + ${round.key}"/>
+            <div th:each="question : ${round.value}">
+                <h6 class="card-subtitle mb-2 text-muted" th:utext="${question.question}"/>
+                <ul>
+                    <li th:each="incorrect : ${question.incorrectAnswers}" th:utext="${incorrect}"></li>
+                    <li style="color: green; font-weight: bold;" th:utext="${question.correctAnswer}"/>
+                </ul>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 

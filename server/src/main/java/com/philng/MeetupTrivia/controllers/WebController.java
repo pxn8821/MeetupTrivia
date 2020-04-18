@@ -11,9 +11,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.view.RedirectView;
 
 import javax.ws.rs.QueryParam;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class WebController
@@ -31,28 +36,70 @@ public class WebController
         return "home.html";
     }
 
-    @GetMapping("admin/")
-    public String adminController( Model model)
+    @GetMapping("admin")
+    public String adminController( Model model )
     {
-        List<Game> games = gameRepository.findAll();
-        Game game = games.get( games.size() - 1 );
+        Game game = gameRepository.getLatestGame();
 
+        if( game == null )
+            return "admin/admin.html";
 
+        model.addAttribute("currentRound", game.getCurrentRound() );
 
+        Map<Long, List<GameQuestion>> gameQuestions = new LinkedHashMap<>();
+        game.getGameQuestions().forEach( q -> {
+            if( !gameQuestions.containsKey( q.getRoundNumber()) )
+            {
+                gameQuestions.put( q.getRoundNumber(), new ArrayList<>() );
+            }
+
+            gameQuestions.get( q.getRoundNumber() ).add( q );
+        });
+        model.addAttribute("questions", gameQuestions );
         return "admin/admin.html";
     }
 
+    @GetMapping("admin/changeRound")
+    public RedirectView changeRound( @QueryParam("roundNumber") int roundNumber,
+                                     RedirectAttributes redirectAttributes )
+    {
+        Game game = gameRepository.getLatestGame();
+
+        if( game == null )
+        {
+            redirectAttributes.addFlashAttribute("fail", "There is no game available");
+        }
+        else
+        {
+            game.setCurrentRound( roundNumber );
+            gameRepository.saveAndFlush( game );
+        }
+        return new RedirectView("/admin");
+    }
+
     @GetMapping("admin/createNewGame")
-    public String createNewGame(Model model,
-                                @QueryParam("numRounds") int numRounds,
-                                @QueryParam("numQuestionsPerRound") int numQuestionsPerRound,
-                                @QueryParam("difficulty") String difficulty ) throws Exception
+    public RedirectView createNewGame(Model model,
+                                      @QueryParam("numRounds") int numRounds,
+                                      @QueryParam("numQuestionsPerRound") int numQuestionsPerRound,
+                                      @QueryParam("difficulty") String difficulty,
+                                      RedirectAttributes redirectAttributes) throws Exception
     {
 
         Game game = new Game();
         gameRepository.saveAndFlush( game );
 
-        JSONObject json = TriviaDatabaseInterface.getTriviaQuestions( numRounds * numQuestionsPerRound, difficulty);
+        JSONObject json = null;
+        try
+        {
+            json = TriviaDatabaseInterface.getTriviaQuestions( numRounds * numQuestionsPerRound, difficulty);
+        }
+        catch( Exception e )
+        {
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("fail", "Unable to get questions from API");
+            return new RedirectView("/admin");
+        }
+
         JSONArray questionArray = json.getJSONArray("results" );
 
         long currentRound = 1;
@@ -78,7 +125,9 @@ public class WebController
                 currentRound += 1;
         }
 
-        return "admin/admin.html";
+        redirectAttributes.addFlashAttribute( "success", "New game created");
+
+        return new RedirectView("/admin");
     }
 
 }

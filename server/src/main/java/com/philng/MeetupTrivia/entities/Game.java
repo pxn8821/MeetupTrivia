@@ -17,6 +17,8 @@ public class Game
     @OneToMany( targetEntity = QuestionAnswer.class, cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "gameId")
     private List<QuestionAnswer> answers;
 
+    private int currentRound;
+
     public Long getId()
     {
         return id;
@@ -45,5 +47,15 @@ public class Game
     public void setAnswers(List<QuestionAnswer> answers)
     {
         this.answers = answers;
+    }
+
+    public int getCurrentRound()
+    {
+        return currentRound;
+    }
+
+    public void setCurrentRound(int currentRound)
+    {
+        this.currentRound = currentRound;
     }
 }
