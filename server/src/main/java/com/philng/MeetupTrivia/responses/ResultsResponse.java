@@ -68,7 +68,7 @@ public class ResultsResponse
             this.answers = answers;
         }
 
-        public class TeamAnswers {
+        public static class TeamAnswers {
             private long questionId;
             private String teamName;
             private String choice;

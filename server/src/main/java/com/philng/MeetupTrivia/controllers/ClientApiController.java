@@ -45,20 +45,51 @@ public class ClientApiController
             response.setGameId( game.getId() );
 
             int currentRound = game.getCurrentRound();
-            Map<Integer, ResultsResponse.ResultsRound> rounds = new LinkedHashMap<>();
 
-            for( int i = 1; i < currentRound; i++ )
+            Map<Long, ResultsResponse.ResultsRound> rounds = new LinkedHashMap<>();
+            Map<Long, GameQuestion> questionMap = new HashMap<>();
+            Map<String, Team> teamMap = new HashMap();
+
+            for( Team team : teamRepository.findAll() )
             {
-                rounds.put(i, new ResultsResponse.ResultsRound());
+                teamMap.put( team.getTeamUUID(), team );
             }
 
+            for( long i = 1; i < currentRound; i++ )
+            {
+                ResultsResponse.ResultsRound round = new ResultsResponse.ResultsRound();
+                round.setRoundId( i );
+                rounds.put( i, round);
+                response.getRoundResults().add( round );
+            }
 
             for( GameQuestion question : game.getGameQuestions() )
             {
+                questionMap.put(question.getId(), question);
                 ResultsResponse.ResultsRound round = rounds.get( question.getRoundNumber() );
                 if(round != null )
                 {
                     round.getQuestions().add( question );
+                }
+            }
+
+            for( QuestionAnswer answer : game.getAnswers() )
+            {
+                GameQuestion question = questionMap.get( answer.getQuestionId() );
+
+                long roundNumber = question.getRoundNumber();
+                ResultsResponse.ResultsRound round = rounds.get( roundNumber );
+
+                if( round != null )
+                {
+                    ResultsResponse.ResultsRound.TeamAnswers teamAnswers = new ResultsResponse.ResultsRound.TeamAnswers();
+
+                    teamAnswers.setChoice( answer.getChoice() );
+                    teamAnswers.setQuestionId( answer.getQuestionId() );
+                    teamAnswers.setTeamName( teamMap.get( answer.getTeamUUID() ).getTeamName() );
+                    teamAnswers.setCorrect( question.getCorrectAnswer().equalsIgnoreCase( answer.getChoice() ) );
+
+                    round.getAnswers().add(teamAnswers);
                 }
             }
 

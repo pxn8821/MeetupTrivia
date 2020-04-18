@@ -9,6 +9,11 @@
             var teamUUID = localStorage['teamUUID'];
 
 
+            function loadResults()
+            {
+
+            }
+
             function clickAndSubmitChoice( choice )
             {
                 var element = $(choice.target);
@@ -179,6 +184,10 @@
                 <a href="#" onclick="logout()"> Logout </a>
             </div>
 
+            <button type="button" class="btn btn-primary" onclick="openResultsModal()">
+                Game Results
+              </button>
+
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
@@ -218,6 +227,94 @@
 
 
         
+
+        <!-- Results Modal -->
+        <script>
+            function openResultsModal()
+            {
+                $("#triviaResults").empty();
+
+                $.ajax({
+                    url: baseUrl + "getResults",
+                    type: 'GET',
+                    success: function(response){
+                        var obj = JSON.parse(response);
+
+                        for( i = 0; i< obj.roundResults.length; i++ )
+                        {
+                            var round = obj.roundResults[i];
+                            var questions = round.questions;
+                            var answers = round.answers;
+
+                            var div = $('<div></div>');
+                            
+                            var header = $('<div></div>');
+                            header.addClass('card-header');
+                            header.text('Round ' + round.roundId);
+
+                            var body = $('<div></div>');
+                            body.addClass('card-body');
+
+                            for( j = 0; j < questions.length; j++ )
+                            {
+                                var question = questions[j];
+
+                                var h5 = $('<h5></h5>')
+                                h5.addClass('card-title');
+                                h5.html( j+1 + ': ' + question.question);
+
+                                var correctAnswer = $('<p></p>');
+                                correctAnswer.html("<b>Correct Answer:</b> " + question.correctAnswer);
+
+                                /// Get team answers
+                                for( k = 0; k < answers.length; k++ )
+                                {
+                                    var answer = answers[k];
+                                    if( answer.questionId === question.id )
+                                    {
+                                        var team = $('<p></p>');
+                                        team.text(answer.teamName + ' - ' + answer.choice);
+                                        body.append( team );
+                                    }
+                                }
+
+                                body.append( h5 );
+                                body.append(correctAnswer);
+                            }
+
+
+                            div.append(header);
+                            div.append(body);
+                            $("#triviaResults").append(div);
+
+                        }
+
+                        $("#resultsModal").modal('show');
+
+                    }
+                });
+            }
+            
+        </script>
+        <div class="modal fade" id="resultsModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLongTitle">Game Results</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+                <div class="modal-body" id="triviaResults">
+                
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+            </div>
+        </div>
 
 
         <!-- Log in as existing team modal-->
