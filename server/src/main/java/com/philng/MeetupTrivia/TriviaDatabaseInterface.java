@@ -17,6 +17,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONObject;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -30,11 +31,18 @@ import java.security.cert.X509Certificate;
 
 public class TriviaDatabaseInterface
 {
-    public static void getTriviaQuestions() throws Exception
+    public static JSONObject getTriviaQuestions(
+            int amount,
+            String difficulty
+    ) throws Exception
     {
         HttpClient client = createAcceptSelfSignedCertificateClient();
 
-        HttpGet get = new HttpGet("https://opentdb.com/api.php?amount=10&category=9&difficulty=easy&type=multiple");
+        String url = String.format("https://opentdb.com/api.php?amount=%d", amount);
+        if( difficulty != null && !difficulty.equals("any"))
+            url = url + "&difficulty=" + difficulty;
+
+        HttpGet get = new HttpGet( url );
 
         HttpResponse response = client.execute(get);
 
@@ -49,13 +57,10 @@ public class TriviaDatabaseInterface
         HttpEntity httpEntity = response.getEntity();
         String apiOutput = EntityUtils.toString(httpEntity);
 
-        System.out.println(apiOutput);
+        JSONObject jsonObject = new JSONObject(apiOutput);
 
-    }
+        return jsonObject;
 
-    public static void main( String [] args ) throws Exception
-    {
-        getTriviaQuestions();
     }
 
     private static HttpClient createAcceptSelfSignedCertificateClient()

@@ -1,6 +1,7 @@
 package com.philng.MeetupTrivia.entities;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -19,7 +20,7 @@ public class GameQuestion
     private String correctAnswer;
 
     @ElementCollection
-    private List<String> incorrectAnswers;
+    private List<String> incorrectAnswers = new ArrayList<>();
 
     public Long getId()
     {
