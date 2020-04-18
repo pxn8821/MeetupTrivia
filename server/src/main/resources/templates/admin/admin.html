@@ -36,7 +36,7 @@
 <div style="margin: 20px">
     <h4>Create new Game</h4>
     <div class="card card-body bg-light">
-        <form action="admin/createNewGame">
+        <form action="createNewGame">
             <div class="form-group">
                 <label for="numRounds">Number of Rounds</label>
                 <input type="number" class="form-control" name="numRounds" id="numRounds" >
@@ -67,7 +67,7 @@
                 <span th:if="${currentRound != null && currentRound != 0}" th:text="${currentRound}"></span>
             </div>
 
-            <form class="form-inline" action="admin/changeRound">
+            <form class="form-inline" action="changeRound">
                 <label for="roundNumber" class="sr-only">Round Number</label>
                 <input type="number" class="form-control" min="0" id="roundNumber" name="roundNumber" th:value="${currentRound == null ? '0' : currentRound }">
                 &nbsp;

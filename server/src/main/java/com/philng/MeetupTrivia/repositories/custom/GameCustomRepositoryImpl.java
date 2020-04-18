@@ -19,7 +19,7 @@ public class GameCustomRepositoryImpl implements GameCustomRepository
     {
         try
         {
-            return entityManager.createQuery("SELECT g FROM Game g ORDER BY g.id DESC", Game.class).getSingleResult();
+            return entityManager.createQuery("SELECT g FROM Game g ORDER BY g.id DESC", Game.class).setMaxResults(1).getSingleResult();
         }
         catch( NoResultException e )
         {

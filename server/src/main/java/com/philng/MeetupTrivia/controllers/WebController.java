@@ -8,6 +8,7 @@ import com.philng.MeetupTrivia.repositories.GameRepository;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,13 +31,16 @@ public class WebController
     @Autowired
     GameQuestionRepository gameQuestionRepository;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
     @GetMapping("home.html")
     public String home(Model model )
     {
         return "home.html";
     }
 
-    @GetMapping("admin")
+    @GetMapping("admin/admin.html")
     public String adminController( Model model )
     {
         Game game = gameRepository.getLatestGame();
@@ -73,8 +77,12 @@ public class WebController
         {
             game.setCurrentRound( roundNumber );
             gameRepository.saveAndFlush( game );
+
+            // Send notifications to connected clients
+            messagingTemplate.convertAndSend("/topic/updates", "newRound");
+
         }
-        return new RedirectView("/admin");
+        return new RedirectView("admin.html");
     }
 
     @GetMapping("admin/createNewGame")
@@ -125,9 +133,12 @@ public class WebController
                 currentRound += 1;
         }
 
+        // Send notifications to connected clients
+        messagingTemplate.convertAndSend("/topic/updates", "newRound");
+
         redirectAttributes.addFlashAttribute( "success", "New game created");
 
-        return new RedirectView("/admin");
+        return new RedirectView("admin.html");
     }
 
 }

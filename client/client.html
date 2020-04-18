@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Meetup Trivia Client</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <script>
+            var baseUrl = "https://clients.philng.com/MeetupTrivia/api/";
+            var teamName = localStorage['teamName'];
+            var teamUUID = localStorage['teamUUID'];
+
+
+            function clickAndSubmitChoice( choice )
+            {
+                var element = $(choice.target);
+                
+                var questionId = element.data('questionId');
+                var choice = element.data('choice');
+                
+                element.parent().find('li').each(function(index, li){
+                    var listItem = $(li);
+
+                    if( listItem.data('choice') === choice )
+                    {
+                        listItem.addClass('active');
+                    }
+                    else
+                    {
+                        listItem.removeClass('active');
+                    }
+                });
+
+                var jsonObj = {
+                    questionId : questionId,
+                    teamUUID: teamUUID,
+                    choice: choice
+                };
+
+                // Make the ajax call
+                $.ajax({
+                    url: baseUrl + "submitQuestionAnswer",
+                    data: JSON.stringify(jsonObj),
+                    type: "POST",
+                    contentType: 'text/plain',
+                    success: function(response){
+                        console.log(response);
+                    },
+                    error: function(response){
+                        alert('Could not submit selection');
+                    }
+                });
+
+            }
+
+            function buildQuestionUI(questions)
+            {
+                for( i = 0; i < questions.length; i++ )
+                {
+                    var question = questions[i];
+
+                    var div = $('<div></div>');
+                    div.addClass('card-body');
+
+                    var h5 = $('<h5></h5>');
+                    h5.addClass('card-title');
+                    h5.html(i+1 + ": " + question.question);
+                    div.append(h5);
+
+                    var ul = $('<ul></ul>');
+                    ul.addClass('list-group');
+
+                    for( j = 0; j < question.choices.length; j++ )
+                    {
+                        var choice = question.choices[j];
+
+                        var li = $('<li></li>');
+                        li.addClass('list-group-item');
+                        li.addClass('list-group-item-action');
+                        li.css('cursor', 'pointer');
+                        li.data('questionId', question.questionId);
+                        li.data('choice', choice);
+                        li.click(clickAndSubmitChoice);
+
+                        if( question.teamAnswer === choice )
+                        {
+                            li.addClass('active');
+                        }
+
+                        li.html(choice);
+                        ul.append(li);
+                    }
+
+                    div.append(ul);
+
+                    $("#questionsDiv .questions").append(div);
+                }
+            }
+
+            function getAndLoadQuestions()
+            {
+                $("#noGamesRunningDiv").hide();
+                $("#questionsDiv").hide();
+                $("#questionsDiv .questions").empty();
+
+                $.ajax({
+                    url: baseUrl + "getQuestionsForCurrentRound",
+                    data: teamUUID,
+                    type: "POST",
+                    contentType: 'text/plain',
+                    success: function(response){
+                        var questions = JSON.parse(response);
+                        if( isEmpty(questions) || questions.currentRound === 0 )
+                        {
+                            $("#noGamesRunningDiv").show();
+                            $("#questionsDiv").hide();
+                            return;
+                        }
+
+                        $("#noGamesRunningDiv").hide();
+                        $("#questionsDiv").show();
+                        $("#questionsDiv .roundNumber").text( questions.currentRound )
+
+                        buildQuestionUI(questions.questions);
+
+                    },
+                    error: function(response){
+                        alert('There was an error loading questions: ' + response);
+                    }
+                });
+            }
+
+            function updateUIForTeamRegistered()
+            {
+                if( teamUUID != null && teamUUID !== '' )
+                {
+                    $("#welcomeJumboTron").hide();
+
+                    $('#teamInformation .teamName').text( teamName );
+                    $('#teamInformation .teamId').text( teamUUID );
+                    $('#teamInformation').fadeIn();
+
+                    getAndLoadQuestions();
+                }
+                else
+                {
+                    $("#welcomeJumboTron").show();
+                    $('#teamInformation').hide();
+                }
+            }
+
+            function logout()
+            {
+                $("#questionsDiv").hide();
+                $("#noGamesRunningDiv").hide();
+                localStorage.removeItem('teamName');
+                localStorage.removeItem('teamUUID');
+
+                teamName = null;
+                teamUUID = null;
+                updateUIForTeamRegistered();
+            }
+
+            //// Utils
+            function isEmpty(obj) {
+                for(var key in obj) {
+                    if(obj.hasOwnProperty(key))
+                        return false;
+                }
+                return true;
+            }
+        </script>
+    </head>
+
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="#">Meetup Trivia Client</a>
+            <div id="teamInformation" style="display: none">
+                <span><b>Your Team Name:</b> </span> <span class="teamName">test</span>
+                <span><b>Your Team ID:</b> </span> <span class="teamId"></span>
+                <a href="#" onclick="logout()"> Logout </a>
+            </div>
+
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+          </nav>
+
+        <div class="jumbotron" id="welcomeJumboTron">
+            <h1 class="display-4">Welcome!</h1>
+            <p class="lead">
+                Welcome to virtual bar trivia! You can play this with your group. Just choose one person to register on this page and start answering questions!              
+            </p>
+            <h5>Rules and Guidelines:</h5>
+            <ul>
+                <li>Don't look up answers! It's cheating and this is for fun anyways.</li>
+            </ul>
+            <hr class="my-4">
+            <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#registerNewTeamModal">I want to make a new team</button>
+            <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#loginTeamModal">I previously registered a team</button>
+        </div>
+
+        <div id="questionsDiv" style="margin: 20px; display: none;">
+            <div class="card">
+                <div class="card-header">
+                  Round <span class="roundNumber"></span>
+                </div>
+                <div class="questions">
+                </div>
+              </div>
+            
+        </div>
+
+        <div id="noGamesRunningDiv" style="display: none; margin: 30px">
+            <div class="alert alert-warning" role="alert">
+                <h4 class="alert-heading">There is currently no game running</h4>
+                <p>Hang tight, when a game is loaded by the host, this page will update with new questions.</p>
+              </div>
+        </div>
+
+
+        
+
+
+        <!-- Log in as existing team modal-->
+        <script>
+            function joinTeam()
+            {
+                $("#joinNewTeamBtn").prop('disabled', true);
+                $.ajax({
+                    url: baseUrl + "loginTeam",
+                    data: $("#loginTeamName").val(),
+                    type: "POST",
+                    contentType: 'text/plain',
+                    success: function(response){
+                        if( response === '')
+                        {
+                            $("#loginTeamName").addClass('is-invalid');
+                        }
+                        else
+                        {
+                            teamName = response;
+                            teamUUID = $("#loginTeamName").val().toUpperCase();
+
+                            localStorage['teamName'] = teamName;
+                            localStorage['teamUUID'] = teamUUID;
+
+                            $("#loginTeamModal").modal("hide");
+                            updateUIForTeamRegistered();
+                        }
+                
+                        $("#joinNewTeamBtn").prop('disabled', false);
+
+                    },
+                    error: function(response){
+                        $("#joinNewTeamBtn").prop('disabled', false);
+                        alert('There was an error: ' + response);
+                    }
+                });
+            }
+        </script>
+        <div class="modal fade" id="loginTeamModal" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">Enter in your team ID</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                          <label for="registerTeamName">Team ID</label>
+                          <input type="text" class="form-control" id="loginTeamName" aria-describedby="teamHelp" onkeydown="$('#loginTeamName').removeClass('is-invalid');">
+                          <div class="invalid-feedback">
+                            Could not find the team ID
+                          </div>
+                          <small id="teamHelp" class="form-text text-muted">If you don't have a team ID, or have lost it, then please contact us if you would like to use the same team. 
+                              Otherwise, just register a new one.</small>
+                        </div>
+                      </form>
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="joinNewTeamBtn" onclick="joinTeam()">Login</button>
+                </div>
+            </div>
+            </div>
+        </div>
+
+
+        <!-- Register New Team Modal -->
+        <script>
+            function registerNewTeam()
+            {
+                $("#registerNewTeamBtn").prop('disabled', true);
+                $.ajax({
+                    url: baseUrl + "registerTeam",
+                    data: $("#registerTeamName").val(),
+                    type: "POST",
+                    contentType: 'text/plain',
+                    success: function(response){
+                        if( response === 'TeamAlreadyExists')
+                        {
+                            $("#registerTeamName").addClass('is-invalid');
+                        }
+                        else
+                        {
+                            teamName = $("#registerTeamName").val();
+                            teamUUID = response;
+
+                            localStorage['teamName'] = teamName;
+                            localStorage['teamUUID'] = teamUUID;
+
+                            $("#registerNewTeamModal").modal("hide");
+                            updateUIForTeamRegistered();
+                        }
+                
+                        $("#registerNewTeamBtn").prop('disabled', false);
+
+                    },
+                    error: function(response){
+                        $("#registerNewTeamBtn").prop('disabled', false);
+                        alert('There was an error: ' + response);
+                    }
+                });
+            }
+        </script>
+        <div class="modal fade" id="registerNewTeamModal" data-backdrop="static" tabindex="-1" role="dialog" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title" id="staticBackdropLabel">Register a new team</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="form-group">
+                          <label for="registerTeamName">Team Name</label>
+                          <input type="text" class="form-control" id="registerTeamName" aria-describedby="teamHelp" onkeydown="$('#registerTeamName').removeClass('is-invalid');">
+                          <div class="invalid-feedback">
+                            The team name already exists, please try another one.
+                          </div>
+                          <small id="teamHelp" class="form-text text-muted">Come up with a name for your team</small>
+                        </div>
+                      </form>
+                </div>
+                <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="registerNewTeamBtn" onclick="registerNewTeam()">Join</button>
+                </div>
+            </div>
+            </div>
+        </div>
+
+
+    </body>
+
+
+
+
+    <script   src="https://code.jquery.com/jquery-3.5.0.js"   integrity="sha256-r/AaFHrszJtwpe+tHyNi/XCfMxYpbsRg2Uqn0x3s2zc="   crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <script>
+        $(document).ready(function(){
+
+            var socket = new SockJS(baseUrl + 'websocket');
+            stompClient = Stomp.over(socket);
+            stompClient.connect({}, function (frame) {
+                stompClient.subscribe('/topic/updates', function (message) {
+                    if( message.body === "newRound" )
+                    {
+                        getAndLoadQuestions();
+                    }
+                });
+            });
+            updateUIForTeamRegistered();
+        });
+    </script>
+</html>
