@@ -94,6 +94,7 @@ public class WebController
     {
 
         Game game = new Game();
+        game.setNumberOfRounds( numRounds );
         gameRepository.saveAndFlush( game );
 
         JSONObject json = null;

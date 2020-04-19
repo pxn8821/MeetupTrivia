@@ -9,11 +9,6 @@
             var teamUUID = localStorage['teamUUID'];
 
 
-            function loadResults()
-            {
-
-            }
-
             function clickAndSubmitChoice( choice )
             {
                 var element = $(choice.target);
@@ -47,7 +42,9 @@
                     type: "POST",
                     contentType: 'text/plain',
                     success: function(response){
-                        console.log(response);
+                        element.parent().parent().find('.SubmittedText').show();
+                        element.parent().parent().find('.SubmittedText').fadeOut(1000);
+
                     },
                     error: function(response){
                         alert('Could not submit selection');
@@ -96,6 +93,13 @@
 
                     div.append(ul);
 
+                    var submittedText = $("<span></span>");
+                    submittedText.css('display', 'none');
+                    submittedText.addClass('SubmittedText');
+                    submittedText.text("Saved!");
+
+                    div.append(submittedText);
+
                     $("#questionsDiv .questions").append(div);
                 }
             }
@@ -121,6 +125,12 @@
                             $("#noGamesRunningDiv").show();
                             $("#questionsDiv").hide();
                             return;
+                        }
+                        if( questions.currentRound === -1 )
+                        {
+                            $("#gameEndedDiv").show();
+                            $("#noGamesRunningDiv").hide();
+                            $("#questionsDiv").hide();                    
                         }
 
                         $("#noGamesRunningDiv").hide();
@@ -183,7 +193,7 @@
             <a class="navbar-brand" href="#">Meetup Trivia Client</a>
             <button type="button" class="btn btn-primary btn-sm" onclick="openResultsModal()">Game Results</button>
 
-            <div id="teamInformation" style="display: none">
+            <div id="teamInformation" style="display: none; margin-left: 5px;">
                 <span><b>Your Team Name:</b> </span> <span class="teamName">test</span>
                 <span><b>Your Team ID:</b> </span> <span class="teamId"></span>
                 <a href="#" onclick="logout()"> Logout </a>
@@ -226,6 +236,13 @@
               </div>
         </div>
 
+
+        <div id="gameEndedDiv" style="display: none; margin: 30px">
+            <div class="alert alert-warning" role="alert">
+                <h4 class="alert-heading">The current game has ended.</h4>
+                <p>Please wait for a new one to start. In the mean time, you can look at the results by clicking "Game Results" at the top of the page.</p>
+              </div>
+        </div>
 
         
 
@@ -339,7 +356,7 @@
                                     }
                                 }
 
-                                var percentage = 100 * (numCorrect / teams.length);
+                                var percentage = Math.round( 100 * (numCorrect / teams.length) );
 
                                 var progressWrapper = $("<div></div>");
                                 progressWrapper.addClass('progress');
@@ -384,8 +401,10 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
                 </div>
-                <div class="modal-body" id="triviaResults">
-                
+
+                <div class="modal-body">
+                    <div>This will show results for rounds that are completed</div>
+                    <div id="triviaResults"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -554,7 +573,39 @@
                     }
                 });
             });
-            updateUIForTeamRegistered();
+
+            if( typeof teamUUID !== 'undefined' )
+            {
+                $.ajax({
+                    url: baseUrl + "loginTeam",
+                    data: teamUUID,
+                    type: "POST",
+                    contentType: 'text/plain',
+                    success: function(response){
+                        if( response === '')
+                        {
+                            logout();
+                        }
+                        else
+                        {
+                            teamName = response;
+
+                            localStorage['teamName'] = teamName;
+                            localStorage['teamUUID'] = teamUUID;
+
+                            updateUIForTeamRegistered();
+                        }
+                    },
+                    error: function(response){
+                        logout();
+                    }
+                });
+            }
+            else
+            {
+                updateUIForTeamRegistered();
+
+            }
         });
     </script>
 </html>

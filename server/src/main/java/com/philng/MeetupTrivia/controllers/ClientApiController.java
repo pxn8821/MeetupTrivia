@@ -98,7 +98,9 @@ public class ClientApiController
             return gson.toJson( response );
         }
 
-        return "no game";
+        Gson gson = new Gson();
+
+        return gson.toJson( new ResultsResponse() );
     }
 
     @PostMapping("/api/submitQuestionAnswer")
@@ -136,14 +138,15 @@ public class ClientApiController
     {
         Game game = gameRepository.getLatestGame();
 
-        List<QuestionAnswer> answers = game.getAnswers()
-                .stream()
-                .filter( a -> a.getTeamUUID().equalsIgnoreCase(teamUUID))
-                .collect(Collectors.toList());
-
         if( game != null )
         {
-            int currentRound = game.getCurrentRound();
+            List<QuestionAnswer> answers = game.getAnswers()
+                    .stream()
+                    .filter( a -> a.getTeamUUID().equalsIgnoreCase(teamUUID))
+                    .collect(Collectors.toList());
+
+            int currentRound = game.getCurrentRound() > game.getNumberOfRounds() ? -1 : game.getCurrentRound();
+
             List<GameQuestion> questions = game.getGameQuestions()
                     .stream()
                     .filter( q -> q.getRoundNumber() == currentRound )

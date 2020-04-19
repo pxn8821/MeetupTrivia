@@ -19,6 +19,8 @@ public class Game
 
     private int currentRound;
 
+    private int numberOfRounds;
+
     public Long getId()
     {
         return id;
@@ -57,5 +59,15 @@ public class Game
     public void setCurrentRound(int currentRound)
     {
         this.currentRound = currentRound;
+    }
+
+    public int getNumberOfRounds()
+    {
+        return numberOfRounds;
+    }
+
+    public void setNumberOfRounds(int numberOfRounds)
+    {
+        this.numberOfRounds = numberOfRounds;
     }
 }
