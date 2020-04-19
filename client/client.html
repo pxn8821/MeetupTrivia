@@ -106,6 +106,9 @@
                 $("#questionsDiv").hide();
                 $("#questionsDiv .questions").empty();
 
+                if( teamUUID === '' || teamUUID === null || typeof teamUUID === 'undefined')
+                    return;
+
                 $.ajax({
                     url: baseUrl + "getQuestionsForCurrentRound",
                     data: teamUUID,
@@ -178,15 +181,13 @@
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <a class="navbar-brand" href="#">Meetup Trivia Client</a>
+            <button type="button" class="btn btn-primary btn-sm" onclick="openResultsModal()">Game Results</button>
+
             <div id="teamInformation" style="display: none">
                 <span><b>Your Team Name:</b> </span> <span class="teamName">test</span>
                 <span><b>Your Team ID:</b> </span> <span class="teamId"></span>
                 <a href="#" onclick="logout()"> Logout </a>
             </div>
-
-            <button type="button" class="btn btn-primary" onclick="openResultsModal()">
-                Game Results
-              </button>
 
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
@@ -230,6 +231,33 @@
 
         <!-- Results Modal -->
         <script>
+            function getTeamResult( answer )
+            {
+                var team = $('<span></span>');
+                team.css('margin', "2px");
+                team.css('cursor','pointer');
+
+                team.addClass('badge');
+
+                team.attr('title', answer.teamName + ': ' + answer.choice);
+                team.tooltip();
+
+                if( answer.isCorrect === true )
+                    team.addClass('badge-success');
+                else if( typeof answer.isCorrect === 'undefined')
+                    team.addClass('badge-warning');
+                else
+                    team.addClass('badge-danger')
+
+
+                var ext = '';
+                if( answer.teamName.length > 20 )
+                    ext = '...';
+
+                team.text( answer.teamName.substring(0, 20) + ext);
+                return team;
+            }
+
             function openResultsModal()
             {
                 $("#triviaResults").empty();
@@ -240,11 +268,21 @@
                     success: function(response){
                         var obj = JSON.parse(response);
 
+                        var divWrapper = $("<div></div>");
+                        divWrapper.append(div);
+
                         for( i = 0; i< obj.roundResults.length; i++ )
                         {
                             var round = obj.roundResults[i];
                             var questions = round.questions;
                             var answers = round.answers;
+
+                            var teams = [];
+                            for( answer of answers )
+                            {
+                                if( !teams.includes(answer.teamName) )
+                                    teams.push( answer.teamName );
+                            }
 
                             var div = $('<div></div>');
                             
@@ -259,38 +297,79 @@
                             {
                                 var question = questions[j];
 
-                                var h5 = $('<h5></h5>')
+                                var h5 = $('<h6></h6>')
                                 h5.addClass('card-title');
                                 h5.html( j+1 + ': ' + question.question);
 
-                                var correctAnswer = $('<p></p>');
+                                var correctAnswer = $('<span></span><br/>');
                                 correctAnswer.html("<b>Correct Answer:</b> " + question.correctAnswer);
-
-                                /// Get team answers
-                                for( k = 0; k < answers.length; k++ )
-                                {
-                                    var answer = answers[k];
-                                    if( answer.questionId === question.id )
-                                    {
-                                        var team = $('<p></p>');
-                                        team.text(answer.teamName + ' - ' + answer.choice);
-                                        body.append( team );
-                                    }
-                                }
 
                                 body.append( h5 );
                                 body.append(correctAnswer);
-                            }
 
+                                /// Get team answers
+                                var numCorrect = 0;
+                                for( teamName of teams )
+                                {
+                                    var found = false;
+                                    for( k = 0; k < answers.length; k++ )
+                                    {
+                                        var answer = answers[k];
+                                        if( answer.questionId === question.id && answer.teamName === teamName)
+                                        {
+                                            found = true;
+                                            
+                                            if( answer.isCorrect )
+                                                numCorrect += 1;
+
+                                            var team = getTeamResult( answer );
+
+                                            body.append( team );
+                                        }
+                                    }
+
+                                    if( !found )
+                                    {
+                                        var noAnswer = {
+                                            teamName: teamName,
+                                            choice: "No answer submitted"
+                                        };
+                                        var team = getTeamResult( noAnswer );
+                                        body.append(team);
+                                    }
+                                }
+
+                                var percentage = 100 * (numCorrect / teams.length);
+
+                                var progressWrapper = $("<div></div>");
+                                progressWrapper.addClass('progress');
+                                progressWrapper.css('margin-top', '10px');
+
+
+                                var progress = $('<div></div>');
+                                progress.addClass('progress-bar');
+                                progress.addClass('progress-bar-striped');
+                                progress.attr('role', 'progressbar');
+                                progress.attr('aria-valuenow', percentage);
+                                progress.attr('aria-valuemin', '0');
+                                progress.attr('aria-valuemax', '100');
+                                progress.css('width', percentage + '%');
+                                progress.text( percentage + '%');
+                                progressWrapper.append(progress);
+                                body.append(progressWrapper);
+
+                                
+                                body.append($("<hr/>"));
+                            }
 
                             div.append(header);
                             div.append(body);
-                            $("#triviaResults").append(div);
 
+                            divWrapper.append(div);
                         }
 
+                        $("#triviaResults").append(divWrapper);
                         $("#resultsModal").modal('show');
-
                     }
                 });
             }
@@ -309,8 +388,7 @@
                 
                 </div>
                 <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save changes</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
             </div>
             </div>
