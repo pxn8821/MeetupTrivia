@@ -1,7 +1,8 @@
 <!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
 <html>
     <head>
-        <title>Meetup Trivia Client</title>
+        <title>Virtual Team Trivia</title>
         <!-- Font Awesome -->
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
         <!-- Google Fonts -->
@@ -12,7 +13,7 @@
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
         
         <script>
-            var baseUrl = "https://clients.philng.com/MeetupTrivia/api/";
+            var baseUrl = "api/";
             var teamName = localStorage['teamName'];
             var teamUUID = localStorage['teamUUID'];
 
@@ -198,11 +199,33 @@
                 return true;
             }
         </script>
+        <style>
+            html,
+            body {
+              height: 100%;
+            }
+
+            #page-content {
+              flex: 1 0 auto;
+            }
+
+            #sticky-footer {
+              flex-shrink: none;
+            }
+
+            .zoom {
+              transition: transform .3s; /* Animation */
+            }
+
+            .zoom:hover {
+              transform: scale(1.05); /* (150% zoom - Note: if the zoom is too large, it will go outside of the viewport) */
+            }
+        </style>
     </head>
 
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
-            <a class="navbar-brand" href="#">Meetup Trivia Client</a>
+            <a class="navbar-brand" href="#">Virtual Team Trivia</a>
             <button type="button" class="btn btn-primary btn-sm" onclick="openResultsModal()">Game Results</button>
 
             <div id="teamInformation" style="display: none; margin-left: 5px;">
@@ -214,6 +237,7 @@
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
+
           </nav>
 
         <div class="jumbotron" id="welcomeJumboTron">
@@ -562,7 +586,24 @@
             </div>
         </div>
 
+        <div class="row text-center" style="margin-top: 60px">
+            <div class="col-md-6 text-right">
+                <a target="_blank" href="https://www.pngdigitalmedia.com">
+                    <img class="zoom" style="padding-top: 15px; width: 200px" src="PNGDigitalMedia.svg"/>
+                </a>
+            </div>
+            <div class="col-md-6 text-left">
+                <a target="_blank" href="https://www.pngmotorsports.com">
+                    <img class="zoom" style="width: 200px" src="PNGMotorsports.svg"/>
+                </a>
+            </div>
+        </div>
 
+        <footer id="sticky-footer" class="py-4 bg-dark text-white-50" style="margin-top: 60px">
+            <div class="container text-left">
+                <small>&copy; <a target="_blank" href="https://www.pngdigitalmedia.com">PNG Digital Media</a></small>
+            </div>
+        </footer>
     </body>
 
 
@@ -573,12 +614,15 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/5.4.0/bootbox.min.js" integrity="sha256-sfG8c9ILUB8EXQ5muswfjZsKICbRIJUG/kBogvvV5sY=" crossorigin="anonymous"></script>
+
 
     <script>
         $(document).ready(function(){
 
             var socket = new SockJS(baseUrl + 'websocket');
             stompClient = Stomp.over(socket);
+            stompClient.debug = null
             stompClient.connect({}, function (frame) {
                 stompClient.subscribe('/topic/updates', function (message) {
                     if( message.body === "newRound" )
@@ -599,6 +643,8 @@
                     }
                 });
 
+            }, function(){
+                bootbox.alert("Connection to the server has been lost. Please refresh this page.");
             });
 
             

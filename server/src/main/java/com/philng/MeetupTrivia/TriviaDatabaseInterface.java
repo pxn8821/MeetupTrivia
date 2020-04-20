@@ -33,7 +33,8 @@ public class TriviaDatabaseInterface
 {
     public static JSONObject getTriviaQuestions(
             int amount,
-            String difficulty
+            String difficulty,
+            String category
     ) throws Exception
     {
         HttpClient client = createAcceptSelfSignedCertificateClient();
@@ -41,6 +42,10 @@ public class TriviaDatabaseInterface
         String url = String.format("https://opentdb.com/api.php?amount=%d", amount);
         if( difficulty != null && !difficulty.equals("any"))
             url = url + "&difficulty=" + difficulty;
+
+        if( category != null && !category.equals("any"))
+            url = url + "&category=" + category;
+
 
         HttpGet get = new HttpGet( url );
 

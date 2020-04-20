@@ -15,11 +15,11 @@ public class GameCustomRepositoryImpl implements GameCustomRepository
     EntityManager entityManager;
 
     @Override
-    public Game getLatestGame()
+    public Game getActiveGame()
     {
         try
         {
-            return entityManager.createQuery("SELECT g FROM Game g ORDER BY g.id DESC", Game.class).setMaxResults(1).getSingleResult();
+            return entityManager.createQuery("SELECT g FROM Game g WHERE g.status = 'ACTIVE' ORDER BY g.id DESC", Game.class).setMaxResults(1).getSingleResult();
         }
         catch( NoResultException e )
         {

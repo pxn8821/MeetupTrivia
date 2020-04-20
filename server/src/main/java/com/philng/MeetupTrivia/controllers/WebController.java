@@ -1,30 +1,31 @@
 package com.philng.MeetupTrivia.controllers;
 
+import com.google.gson.Gson;
+import com.philng.MeetupTrivia.GameResultsGenerator;
 import com.philng.MeetupTrivia.TriviaDatabaseInterface;
 import com.philng.MeetupTrivia.entities.Game;
 import com.philng.MeetupTrivia.entities.GameQuestion;
 import com.philng.MeetupTrivia.repositories.GameQuestionRepository;
 import com.philng.MeetupTrivia.repositories.GameRepository;
+import com.philng.MeetupTrivia.responses.ResultsResponse;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.view.RedirectView;
 
 import javax.ws.rs.QueryParam;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.sql.Timestamp;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 public class WebController
 {
-
     @Autowired
     GameRepository gameRepository;
 
@@ -34,40 +35,96 @@ public class WebController
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    @GetMapping("home.html")
-    public String home(Model model )
+    @Autowired
+    GameResultsGenerator gameResultsGenerator;
+
+    @GetMapping("/index.html")
+    public String home(Model model)
     {
-        return "home.html";
+        return "client.html";
+    }
+
+
+    @PostMapping("admin/api/getResults")
+    @ResponseBody
+    public String getResults(@RequestBody String json)
+    {
+        JSONObject jsonObject = new JSONObject(json);
+
+        int roundNumber = jsonObject.getInt("roundNumber");
+        int gameId = jsonObject.getInt("gameId");
+
+        Optional<Game> game = gameRepository.findById((long) gameId);
+
+        ResultsResponse response;
+        if (game.isPresent())
+        {
+            response = gameResultsGenerator.getResults(true, game.get());
+
+            List<ResultsResponse.ResultsRound> rounds = response.getRoundResults();
+
+            if( roundNumber != -1 )
+            {
+                response.setRoundResults(rounds.stream().filter(r -> r.getRoundId() == roundNumber).collect(Collectors.toList()));
+            }
+
+        }
+        else
+        {
+            response = new ResultsResponse();
+        }
+
+        Gson gson = new Gson();
+        return gson.toJson(response);
+    }
+
+    @GetMapping("admin/api/getGames")
+    @ResponseBody
+    public String getGames()
+    {
+        Gson gson = new Gson();
+        return gson.toJson(gameRepository.findAll());
     }
 
     @GetMapping("admin/admin.html")
-    public String adminController( Model model )
+    public String adminController(Model model)
     {
-        Game game = gameRepository.getLatestGame();
 
-        if( game == null )
-            return "admin/admin.html";
+        model.addAttribute( "activeGame", gameRepository.getActiveGame() );
+        model.addAttribute("games", gameRepository.findAll());
 
-        model.addAttribute("currentRound", game.getCurrentRound() );
+        return "admin/admin.html";
+    }
 
-        Map<Long, List<GameQuestion>> gameQuestions = new LinkedHashMap<>();
-        game.getGameQuestions().forEach( q -> {
-            if( !gameQuestions.containsKey( q.getRoundNumber()) )
+    @PostMapping("admin/setActiveGame")
+    public RedirectView changeActiveGame(@RequestParam("gameSelect") Long gameId,
+                                         RedirectAttributes redirectAttributes )
+    {
+        gameRepository.findAll().stream().forEach( g -> {
+            if(g.getStatus() == Game.Status.ACTIVE && g.getId() != gameId )
             {
-                gameQuestions.put( q.getRoundNumber(), new ArrayList<>() );
+                g.setStatus( Game.Status.FINISHED );
+                gameRepository.save( g );
             }
 
-            gameQuestions.get( q.getRoundNumber() ).add( q );
+            if( g.getId() == gameId )
+            {
+                g.setStatus( Game.Status.ACTIVE );
+                g.setTimeStarted( new Timestamp(System.currentTimeMillis()));
+                gameRepository.save(g);
+            }
+
         });
-        model.addAttribute("questions", gameQuestions );
-        return "admin/admin.html";
+        redirectAttributes.addFlashAttribute("success", "Game " + gameId + " is now the active game");
+
+        return new RedirectView("admin.html");
     }
 
     @GetMapping("admin/changeRound")
     public RedirectView changeRound( @QueryParam("roundNumber") int roundNumber,
                                      RedirectAttributes redirectAttributes )
     {
-        Game game = gameRepository.getLatestGame();
+        Game game = gameRepository.getActiveGame();
 
         if( game == null )
         {
@@ -85,22 +142,44 @@ public class WebController
         return new RedirectView("admin.html");
     }
 
+    @GetMapping("admin/incrementRound")
+    public RedirectView incrementRound( RedirectAttributes redirectAttributes )
+    {
+       Game game = gameRepository.getActiveGame();
+       return changeRound( game.getCurrentRound() + 1, redirectAttributes);
+    }
+
+    @GetMapping("admin/decrementRound")
+    public RedirectView decrementRound( RedirectAttributes redirectAttributes )
+    {
+        Game game = gameRepository.getActiveGame();
+        return changeRound( game.getCurrentRound() - 1, redirectAttributes);
+    }
+
     @GetMapping("admin/createNewGame")
     public RedirectView createNewGame(Model model,
                                       @QueryParam("numRounds") int numRounds,
                                       @QueryParam("numQuestionsPerRound") int numQuestionsPerRound,
                                       @QueryParam("difficulty") String difficulty,
+                                      @QueryParam("roundMode") String roundMode,
+                                      @QueryParam("minutePerRound") int minutePerRound,
+                                      @QueryParam("category") String category,
                                       RedirectAttributes redirectAttributes) throws Exception
     {
 
         Game game = new Game();
         game.setNumberOfRounds( numRounds );
+        game.setTimeCreated( new Timestamp( System.currentTimeMillis() ));
+
+        if( roundMode.equalsIgnoreCase("auto") )
+            game.setMinutesPerRound( minutePerRound );
+
         gameRepository.saveAndFlush( game );
 
         JSONObject json = null;
         try
         {
-            json = TriviaDatabaseInterface.getTriviaQuestions( numRounds * numQuestionsPerRound, difficulty);
+            json = TriviaDatabaseInterface.getTriviaQuestions( numRounds * numQuestionsPerRound, difficulty, category);
         }
         catch( Exception e )
         {

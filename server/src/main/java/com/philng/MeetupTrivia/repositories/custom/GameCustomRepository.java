@@ -4,5 +4,5 @@ import com.philng.MeetupTrivia.entities.Game;
 
 public interface GameCustomRepository
 {
-    public Game getLatestGame();
+    public Game getActiveGame();
 }

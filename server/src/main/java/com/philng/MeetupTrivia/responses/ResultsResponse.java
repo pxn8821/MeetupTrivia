@@ -1,6 +1,7 @@
 package com.philng.MeetupTrivia.responses;
 
 import com.philng.MeetupTrivia.entities.GameQuestion;
+import com.philng.MeetupTrivia.entities.Team;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +11,17 @@ public class ResultsResponse
 
     private long gameId;
     private List<ResultsRound> roundResults = new ArrayList<>();
+    private List<Team> teams = new ArrayList<>();
+
+    public List<Team> getTeams()
+    {
+        return teams;
+    }
+
+    public void setTeams(List<Team> teams)
+    {
+        this.teams = teams;
+    }
 
     public long getGameId()
     {

@@ -1,14 +1,33 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Meetup Trivia</title>
+    <title>Virtual Team Trivia - Admin</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-    <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
-
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+    <!-- Google Fonts -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap">
+    <!-- Material Design Bootstrap -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.16.0/css/mdb.min.css" rel="stylesheet">
+
+    <script   src="https://code.jquery.com/jquery-3.5.0.js"   integrity="sha256-r/AaFHrszJtwpe+tHyNi/XCfMxYpbsRg2Uqn0x3s2zc="   crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <!-- Bootstrap tooltips -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.4/umd/popper.min.js"></script>
+    <!-- MDB core JavaScript -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.16.0/js/mdb.min.js"></script>
+
+    <script>
+        var baseUrl = "api/";
+    </script>
+
 </head>
 <body>
 
@@ -34,64 +53,394 @@
 
 
 <div style="margin: 20px">
-    <h4>Create new Game</h4>
-    <div class="card card-body bg-light">
-        <form action="createNewGame">
-            <div class="form-group">
-                <label for="numRounds">Number of Rounds</label>
-                <input type="number" class="form-control" name="numRounds" id="numRounds" >
-            </div>
-            <div class="form-group">
-                <label for="numQuestionsPerRound">Number of Questions Per Round</label>
-                <input type="number" class="form-control" name="numQuestionsPerRound" id="numQuestionsPerRound" >
-            </div>
-            <div class="form-group">
-                <label for="difficulty">Difficulty</label>
-                <select name="difficulty" id="difficulty" class="form-control">
-                    <option value="any">Any Difficulty</option>
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary">Create new Round</button>
-        </form>
-    </div>
-
-    <br/>
-    <h4>Move Next Round</h4>
-        <div class="card card-body bg-light">
-            <div>
-                <span>Current Round: </span>
-                <span th:if="${currentRound == null || currentRound == 0}"><b>Game not started</b></span>
-                <span th:if="${currentRound != null && currentRound != 0}" th:text="${currentRound}"></span>
-            </div>
-
-            <form class="form-inline" action="changeRound">
-                <label for="roundNumber" class="sr-only">Round Number</label>
-                <input type="number" class="form-control" min="0" id="roundNumber" name="roundNumber" th:value="${currentRound == null ? '0' : currentRound }">
-                &nbsp;
-                <button type="submit" class="btn btn-primary">Change Round</button>
-            </form>
-
-        </div>
-    <br/>
     <h4>Current Game Info</h4>
-    <div class="card" style="width: 50%;" th:each="round : ${questions}">
-        <div class="card-body">
-            <h5 class="card-title" th:text="'Round ' + ${round.key}"/>
-            <div th:each="question : ${round.value}">
-                <h6 class="card-subtitle mb-2 text-muted" th:utext="${question.question}"/>
-                <ul>
-                    <li th:each="incorrect : ${question.incorrectAnswers}" th:utext="${incorrect}"></li>
-                    <li style="color: green; font-weight: bold;" th:utext="${question.correctAnswer}"/>
-                </ul>
+    <div class="card card-body bg-light">
+        <div class="">
+            <div class="row">
+                <div class="col-4">
+                    <div class="treeview-animated border mx-1">
+                        <h6 class="pt-3 pl-3">Games</h6>
+                        <hr>
+                        <div id="gamesList">
+                        </div>
+                    </div>
+                </div>
+                <div class="col" id="triviaResults"></div>
             </div>
         </div>
     </div>
+</div>
+<div class="container">
+    <div class="row">
+        <div class="col-lg-6">
+            <h4>Create new Game</h4>
+            <div class="card card-body bg-light">
+                <form action="createNewGame">
+                    <div class="form-group">
+                        <label for="numRounds">Number of Rounds</label>
+                        <input type="number" class="form-control" name="numRounds" id="numRounds" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="numQuestionsPerRound">Number of Questions Per Round</label>
+                        <input type="number" class="form-control" name="numQuestionsPerRound" id="numQuestionsPerRound" min="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="difficulty">Difficulty</label>
+                        <select name="difficulty" id="difficulty" class="form-control">
+                            <option value="any">Any Difficulty</option>
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <select name="category" id="category" class="form-control">
+                            <option value="any">Any Category</option>
+                            <option value="9">General Knowledge</option><option value="10">Entertainment: Books</option><option value="11">Entertainment: Film</option><option value="12">Entertainment: Music</option><option value="13">Entertainment: Musicals &amp; Theatres</option><option value="14">Entertainment: Television</option><option value="15">Entertainment: Video Games</option><option value="16">Entertainment: Board Games</option><option value="17">Science &amp; Nature</option><option value="18">Science: Computers</option><option value="19">Science: Mathematics</option><option value="20">Mythology</option><option value="21">Sports</option><option value="22">Geography</option><option value="23">History</option><option value="24">Politics</option><option value="25">Art</option><option value="26">Celebrities</option><option value="27">Animals</option><option value="28">Vehicles</option><option value="29">Entertainment: Comics</option><option value="30">Science: Gadgets</option><option value="31">Entertainment: Japanese Anime &amp; Manga</option><option value="32">Entertainment: Cartoon &amp; Animations</option>
+                        </select>
+                    </div>
 
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="roundMode" id="roundModeManual" value="manual" onclick="$('#roundMinuteInput').slideUp()" checked>
+                        <label class="form-check-label" for="roundModeManual">
+                            Advance rounds manually
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="roundMode" id="roundModeAuto" value="auto" onclick="$('#roundMinuteInput').slideDown()">
+                        <label class="form-check-label" for="roundModeAuto">
+                            Change rounds every x minutes
+                        </label>
+                    </div><br/>
+                    <div class="form-group" id="roundMinuteInput" style="display: none">
+                        <label for="numRounds">Minutes per Round</label>
+                        <input type="number" class="form-control" name="minutePerRound" min="1" id="minutePerRound" value="10" >
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Create new Round</button>
+                </form>
+            </div>
+
+        </div>
+
+        <div class="col-lg-6">
+            <div class="row">
+                <div class="col">
+                    <h4>Set Active Game</h4>
+                    <div class="card card-body bg-light">
+                        <form class="form" method="POST" action="setActiveGame">
+                            <div class="form-group">
+                                <select name="gameSelect" class="form-control" id="activeGameSelect">
+                                    <option value="">No Active Game</option>
+                                    <option th:each="game : ${games}" th:text="'Game #' + ${game.id}" th:selected="${activeGame != null && game.id == activeGame.id}" th:value="${game.id}">
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary">Set Active Game</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <br/>
+            <div class="row" th:if="${activeGame != null && activeGame.minutesPerRound == null}">
+                <div class="col">
+                    <h4>Move Next Round</h4>
+                    <div class="card card-body bg-light">
+                        <div>
+                            <span>Current Round: </span>
+                            <span th:text="${activeGame.currentRound}"></span>
+                        </div>
+                        <div>
+                            <form action="decrementRound">
+                                <button type="submit" class="btn btn-sm btn-info">Previous Round</button>
+                            </form>
+                            <form action="incrementRound">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <th:block th:if="${activeGame.currentRound == 0}">Start Game</th:block>
+                                    <th:block th:if="${activeGame.currentRound > 0 && activeGame.currentRound != activeGame.numberOfRounds}">Next Round</th:block>
+                                    <th:block th:if="${activeGame.currentRound == activeGame.numberOfRounds}">End Game</th:block>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row" th:if="${activeGame != null && activeGame.minutesPerRound != null}">
+                <div class="col">
+                    <h4>Round Timer</h4>
+                    <div class="card card-body bg-light">
+                        <div>
+                            <span>Current Round: </span>
+                            <span th:text="${activeGame.currentRound}" id="currentRoundSpan"/>
+                        </div>
+                        <div>
+                            <span>Time Remaining for Round: </span>
+                            <span id="timeRemainingSpan"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </div>
 
+
+<script>
+        var gameId = 0;
+        var roundNumber = 0;
+        var loading = false;
+
+        function clickRound( event )
+        {
+            var t = $(event.target);
+
+            gameId = t.data('gameId');
+            roundNumber = t.data('roundNumber');
+
+            loadResults(gameId, roundNumber);
+        }
+
+        function loadGamesAndRoundsList()
+        {
+            $("#gamesList").empty();
+            loading = true;
+
+            $.ajax({
+                url: baseUrl + "getGames",
+                type: 'GET',
+                success: function(response){
+                    var obj = JSON.parse(response);
+                    for( game of obj){
+                        var ul = $('<ul></ul>');
+                        ul.addClass('treeview-animated-list');
+                        ul.addClass('mb-3');
+
+                        var gameLi = $('<li></li>');
+                        gameLi.addClass('treeview-animated-items');
+
+                        var gameA = $('<a></a>');
+                        gameA.addClass('closed');
+
+                        var gameI = $('<i></i>');
+                        gameI.addClass('fas');
+                        gameI.addClass('fa-angle-right');
+
+                        var gameSpan = $('<span></span>');
+                        gameSpan.text(' Game ' + game.id + ' - ' + game.timeCreated );
+                        gameSpan.data('gameId', game.id);
+                        gameSpan.data('roundNumber', -1 );
+                        gameSpan.click( clickRound );
+
+                        gameA.append(gameI);
+                        gameA.append(gameSpan);
+
+                        gameLi.append(gameA);
+
+                        ul.append( gameLi );
+
+                        for( i = 1; i <= game.numberOfRounds; i++ ){
+                            var roundUl = $('<ul></ul>');
+                            roundUl.addClass('nested');
+
+                            var roundLi = $('<li></li>');
+                            var roundDiv = $('<div></div>');
+
+                            roundDiv.addClass('treeview-animated-element');
+                            roundDiv.text('Round #' + i);
+                            roundDiv.data('gameId', game.id);
+                            roundDiv.data('roundNumber', i );
+
+                            roundDiv.click( clickRound );
+                            roundUl.append(roundLi);
+                            roundLi.append(roundDiv);
+
+                            ul.append(roundUl);
+                        }
+
+                        $("#gamesList").append( ul );
+                        loading = false;
+                    }
+
+                },
+                error: function( response ){
+                    loading = false;
+                    alert('Unable to get rounds list');
+                }
+            });
+        }
+
+        $(document).ready(function(){
+
+            var socket = new SockJS(baseUrl + 'websocket');
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null
+            stompClient.connect({}, function (frame) {
+                stompClient.subscribe('/topic/answerSubmitted', function (message) {
+                    if( !loading)
+                        loadResults(gameId, roundNumber);
+                });
+                stompClient.subscribe('/topic/timeLeftForRound', function (message) {
+                    $("#timeRemainingSpan").text(message.body);
+                });
+                stompClient.subscribe('/topic/newRoundNumber', function (message) {
+                    $("#currentRoundSpan").text(message.body);
+                });
+            });
+
+            loadGamesAndRoundsList();
+        });
+
+        function getTeamResult( answer )
+        {
+            var team = $('<span></span>');
+            team.css('margin', "2px");
+            team.css('cursor','pointer');
+
+            team.addClass('badge');
+
+            team.attr('title', answer.teamName + ': ' + answer.choice);
+            team.tooltip();
+
+            if( answer.isCorrect === true )
+                team.addClass('badge-success');
+            else if( typeof answer.isCorrect === 'undefined')
+                team.addClass('badge-warning');
+            else
+                team.addClass('badge-danger')
+
+
+            var ext = '';
+            if( answer.teamName.length > 20 )
+                ext = '...';
+
+            team.text( answer.teamName.substring(0, 20) + ext);
+            return team;
+        }
+
+        function loadResults( gameId, roundNumber )
+        {
+            $.ajax({
+                url: baseUrl + "getResults",
+                data: JSON.stringify({
+                    gameId: gameId,
+                    roundNumber: roundNumber
+                }),
+                type: "POST",
+                contentType: 'text/plain',
+                success: function(response){
+                    $("#triviaResults").empty();
+                    var obj = JSON.parse(response);
+
+                    var divWrapper = $("<div></div>");
+                    divWrapper.append(div);
+
+                    for( i = 0; i< obj.roundResults.length; i++ )
+                    {
+                        var round = obj.roundResults[i];
+                        var questions = round.questions;
+                        var answers = round.answers;
+
+                        var teams = [];
+                            for( team of obj.teams )
+                            {
+                                if( !teams.includes(team.teamName) )
+                                    teams.push( team.teamName );
+                            }
+
+                        var div = $('<div></div>');
+
+                        var header = $('<div></div>');
+                        header.addClass('card-header');
+                        header.text('Game ' + obj.gameId + ', Round ' + round.roundId);
+
+                        var body = $('<div></div>');
+                        body.addClass('card-body');
+
+                        for( j = 0; j < questions.length; j++ )
+                        {
+                            var question = questions[j];
+
+                            var h5 = $('<h6></h6>')
+                            h5.addClass('card-title');
+                            h5.html( j+1 + ': ' + question.question);
+
+                            var correctAnswer = $('<span></span><br/>');
+                            correctAnswer.html("<b>Correct Answer:</b> " + question.correctAnswer);
+
+                            body.append( h5 );
+                            body.append(correctAnswer);
+
+                            /// Get team answers
+                            var numCorrect = 0;
+                            for( teamName of teams )
+                            {
+                                var found = false;
+                                for( k = 0; k < answers.length; k++ )
+                                {
+                                    var answer = answers[k];
+                                    if( answer.questionId === question.id && answer.teamName === teamName)
+                                    {
+                                        found = true;
+
+                                        if( answer.isCorrect )
+                                            numCorrect += 1;
+
+                                        var team = getTeamResult( answer );
+
+                                        body.append( team );
+                                    }
+                                }
+
+                                if( !found )
+                                {
+                                    var noAnswer = {
+                                        teamName: teamName,
+                                        choice: "No answer submitted"
+                                    };
+                                    var team = getTeamResult( noAnswer );
+                                    body.append(team);
+                                }
+                            }
+
+                            var percentage = Math.round( 100 * (numCorrect / teams.length) );
+                            if( teams.length === 0 )
+                                percentage = 0;
+
+                            var progressWrapper = $("<div></div>");
+                            progressWrapper.addClass('progress');
+                            progressWrapper.css('margin-top', '10px');
+
+
+                            var progress = $('<div></div>');
+                            progress.addClass('progress-bar');
+                            progress.addClass('progress-bar-striped');
+                            progress.attr('role', 'progressbar');
+                            progress.attr('aria-valuenow', percentage);
+                            progress.attr('aria-valuemin', '0');
+                            progress.attr('aria-valuemax', '100');
+                            progress.css('width', percentage + '%');
+                            progress.text( percentage + '%');
+                            progressWrapper.append(progress);
+                            body.append(progressWrapper);
+
+
+                            body.append($("<hr/>"));
+                        }
+
+                        div.append(header);
+                        div.append(body);
+
+                        divWrapper.append(div);
+                    }
+
+                    $("#triviaResults").append(divWrapper);
+                }
+            });
+        }
+    </script>
 
 </body>
 </html>
