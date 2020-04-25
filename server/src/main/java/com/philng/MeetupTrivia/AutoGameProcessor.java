@@ -90,7 +90,15 @@ public class AutoGameProcessor extends Thread
                                     TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis)));
 
                     if( currentRound > game.getNumberOfRounds() )
+                    {
                         timeRemainingStr = "Game ended";
+                        if( game.getStatus() != Game.Status.FINISHED )
+                        {
+                            game.setStatus( Game.Status.FINISHED );
+                            gameRepository.save( game );
+                        }
+                    }
+
                     messagingTemplate.convertAndSend("/topic/timeLeftForRound", timeRemainingStr);
                 }
                 else

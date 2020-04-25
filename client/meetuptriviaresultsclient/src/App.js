@@ -6,6 +6,7 @@ import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import List from '@material-ui/core/List';
 import Typography from '@material-ui/core/Typography';
+import Link from '@material-ui/core/Link';
 import Divider from '@material-ui/core/Divider';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
@@ -51,11 +52,10 @@ export default function App() {
   useEffect( () => {
     if( !loaded )
     {
-      fetch("http://localhost:8080/api/results/games")
+      fetch("api/results/games")
       .then( res => res.json())
       .then( response => {
         setGames(response);
-        loadGame(1);
       } );
       setLoaded(true);
     }
@@ -64,7 +64,7 @@ export default function App() {
 
   var loadGame = (gameId) => {
 
-    fetch("http://localhost:8080/api/results/game/" + gameId)
+    fetch("api/results/game/" + gameId)
     .then( res => res.json())
     .then( response => {
       setData(response);
@@ -89,7 +89,7 @@ export default function App() {
       <AppBar position="fixed" className={classes.appBar}>
         <Toolbar>
           <Typography variant="h6" noWrap>
-            Trivia Results
+            Trivia Results - <Link href="/" style={{textDecoration: 'underline'}}color='inherit'>Back to Game</Link>
           </Typography>
         </Toolbar>
       </AppBar>
