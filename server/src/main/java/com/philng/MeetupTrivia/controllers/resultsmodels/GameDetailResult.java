@@ -46,6 +46,7 @@ public class GameDetailResult extends GameResult
 
         private List<RoundQuestion> questions = new ArrayList<>();
 
+        private List<Team> teamResults = new ArrayList<>();
 
         public Long getRoundNumber()
         {
@@ -65,6 +66,16 @@ public class GameDetailResult extends GameResult
         public void setQuestions(List<RoundQuestion> questions)
         {
             this.questions = questions;
+        }
+
+        public List<Team> getTeamResults()
+        {
+            return teamResults;
+        }
+
+        public void setTeamResults(List<Team> teamResults)
+        {
+            this.teamResults = teamResults;
         }
 
         public static class RoundQuestion{
@@ -154,8 +165,8 @@ public class GameDetailResult extends GameResult
 
     public static class Team{
         private String teamName;
-        private int numberAnswered = 0;
-        private int numberCorrect = 0;
+        private Integer numberAnswered;
+        private Integer numberCorrect;
 
         public String getTeamName()
         {
@@ -167,33 +178,41 @@ public class GameDetailResult extends GameResult
             this.teamName = teamName;
         }
 
-        public int getNumberAnswered()
+        public Integer getNumberAnswered()
         {
             return numberAnswered;
         }
 
-        public void setNumberAnswered(int numberAnswered)
+        public void setNumberAnswered(Integer numberAnswered)
         {
             this.numberAnswered = numberAnswered;
         }
 
-        public int getNumberCorrect()
+        public Integer getNumberCorrect()
         {
             return numberCorrect;
         }
 
-        public void setNumberCorrect(int numberCorrect)
+        public void setNumberCorrect(Integer numberCorrect)
         {
             this.numberCorrect = numberCorrect;
         }
 
         public void incrementNumberAnswered()
         {
+            if( numberAnswered == null )
+            {
+                numberAnswered = 0;
+            }
             numberAnswered++;
         }
 
         public void incrementNumberCorrect()
         {
+            if( numberCorrect == null )
+            {
+                numberCorrect = 0;
+            }
             numberCorrect++;
         }
     }

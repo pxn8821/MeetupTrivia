@@ -124,8 +124,9 @@ public class ResultsAPIController
 
                     GameDetailResult.Round.RoundQuestion roundQuestion = new GameDetailResult.Round.RoundQuestion();
                     roundQuestion.setCorrectAnswer( q.getCorrectAnswer() );
-
+                    roundQuestion.setQuestion( q.getQuestion() );
                     roundQuestion.getChoices().add( q.getCorrectAnswer() );
+
                     q.getIncorrectAnswers().forEach( q1 -> roundQuestion.getChoices().add( q1 ) );
                     Collections.shuffle( roundQuestion.getChoices() );
 
@@ -148,10 +149,37 @@ public class ResultsAPIController
                 });
 
 
+            // Calculate each team's number of correct answers for a round
+            roundMap.forEach( ( index, round ) -> {
+                Map<String, GameDetailResult.Team> teams = new HashMap<>();
+
+                round.getQuestions().forEach( question -> {
+                    question.getTeamAnswers().forEach( answer -> {
+                        if( !teams.containsKey( answer.getTeam().getTeamName() ) )
+                        {
+                            GameDetailResult.Team team = new GameDetailResult.Team();
+                            team.setTeamName( answer.getTeam().getTeamName() );
+                            team.setNumberAnswered( 0 );
+                            team.setNumberCorrect( 0 );
+                            teams.put( team.getTeamName(), team );
+                        }
+
+                        GameDetailResult.Team team = teams.get( answer.getTeam().getTeamName() );
+
+                        if( answer.getChoice() != null )
+                            team.incrementNumberAnswered();
+
+                        if( answer.isCorrect() )
+                            team.incrementNumberCorrect();
+                    });
+                });
+
+                teams.forEach( (index2, team ) -> round.getTeamResults().add( team ));
+            });
+
             overallTeamResult.forEach( (teamName, team) -> result.getTeamsPresent().add(team) );
-
-
             roundMap.forEach( (index, round) -> result.getRounds().add( round ));
+
             return new ResponseEntity<>( result, HttpStatus.OK );
         }
         return new ResponseEntity<>( null, HttpStatus.UNAUTHORIZED );

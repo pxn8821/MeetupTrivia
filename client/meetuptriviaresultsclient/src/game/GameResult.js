@@ -7,6 +7,8 @@ import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import Typography from '@material-ui/core/Typography';
 import Box from '@material-ui/core/Box';
+import OverallResults from './OverallResults.js';
+import RoundResult from './RoundResult.js';
 
 function TabPanel(props) {
   const { children, value, index, ...other } = props;
@@ -56,13 +58,13 @@ export default function GameResult(props)
       setValue(newValue);
     };
 
-    console.log(props.data);
+    var data = props.data;
 
     return(
         <>
             <Paper variant="outlined">
                 <Typography variant='h6'>
-                    Game #{props.gameId} Results
+                    Game #{data.id} Results
                 </Typography>
             </Paper>
             <br/>
@@ -75,38 +77,23 @@ export default function GameResult(props)
                 textColor="primary"
                 variant="scrollable"
                 scrollButtons="auto"
-                aria-label="scrollable auto tabs example"
                 >
-                <Tab label="Item One" {...a11yProps(0)} />
-                <Tab label="Item Two" {...a11yProps(1)} />
-                <Tab label="Item Three" {...a11yProps(2)} />
-                <Tab label="Item Four" {...a11yProps(3)} />
-                <Tab label="Item Five" {...a11yProps(4)} />
-                <Tab label="Item Six" {...a11yProps(5)} />
-                <Tab label="Item Seven" {...a11yProps(6)} />
+                <Tab label="Overall Results" {...a11yProps(0)} />
+
+                {data.rounds.map(( round, i ) => (
+                  <Tab key={i} label={'Round ' + round.roundNumber} {...a11yProps(round.roundNumber)} />
+                  ))}
                 </Tabs>
             </AppBar>
             <TabPanel value={value} index={0}>
-                Item One
+                <OverallResults data={data}/>
             </TabPanel>
-            <TabPanel value={value} index={1}>
-                Item Two
-            </TabPanel>
-            <TabPanel value={value} index={2}>
-                Item Three
-            </TabPanel>
-            <TabPanel value={value} index={3}>
-                Item Four
-            </TabPanel>
-            <TabPanel value={value} index={4}>
-                Item Five
-            </TabPanel>
-            <TabPanel value={value} index={5}>
-                Item Six
-            </TabPanel>
-            <TabPanel value={value} index={6}>
-                Item Seven
-            </TabPanel>
+                
+            {data.rounds.map(( round, i ) => (
+                <TabPanel key={i} value={value} index={round.roundNumber}>
+                  <RoundResult data={round}/>
+                </TabPanel>        
+            ))}  
 
             </div>
         </>

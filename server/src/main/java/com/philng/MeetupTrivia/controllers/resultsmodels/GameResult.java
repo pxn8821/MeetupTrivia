@@ -20,6 +20,8 @@ public class GameResult
 
     private int numberOfRounds;
 
+    private int numberOfQuestions;
+
 
 
     public GameResult( Game game )
@@ -31,6 +33,7 @@ public class GameResult
         this.status = game.getStatus();
         this.currentRound = game.getCurrentRound();
         this.numberOfRounds = game.getNumberOfRounds();
+        this.numberOfQuestions = game.getGameQuestions().size();
     }
 
     public Long getId()
@@ -101,5 +104,15 @@ public class GameResult
     public void setNumberOfRounds(int numberOfRounds)
     {
         this.numberOfRounds = numberOfRounds;
+    }
+
+    public int getNumberOfQuestions()
+    {
+        return numberOfQuestions;
+    }
+
+    public void setNumberOfQuestions(int numberOfQuestions)
+    {
+        this.numberOfQuestions = numberOfQuestions;
     }
 }

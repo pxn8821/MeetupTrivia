@@ -34,7 +34,8 @@ const useStyles = makeStyles((theme) => ({
   // necessary for content to be below app bar
   toolbar: theme.mixins.toolbar,
   content: {
-    flexGrow: 1,
+    width: '70%',
+    flexGrow: 2,
     backgroundColor: theme.palette.background.default,
     padding: theme.spacing(3),
   },
@@ -50,11 +51,11 @@ export default function App() {
   useEffect( () => {
     if( !loaded )
     {
-      console.log('test');
       fetch("http://localhost:8080/api/results/games")
       .then( res => res.json())
       .then( response => {
         setGames(response);
+        loadGame(1);
       } );
       setLoaded(true);
     }
@@ -113,7 +114,7 @@ export default function App() {
       </Drawer>
       <main className={classes.content}>
         <div className={classes.toolbar} />
-			{renderGamePanel()}
+			  <div>{renderGamePanel()}</div>
       </main>
     </div>
   );

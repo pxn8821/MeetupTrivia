@@ -11,9 +11,12 @@
     "moment": "^2.24.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "react-google-charts": "^3.0.15",
     "react-moment": "^0.9.7",
     "react-redux": "^7.2.0",
-    "react-scripts": "3.4.1"
+    "react-scripts": "3.4.1",
+    "react-sweet-progress": "^1.1.2",
+    "react-vis": "^1.11.7"
   },
   "scripts": {
     "start": "react-scripts start",
