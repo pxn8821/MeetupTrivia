@@ -112,6 +112,9 @@ public class WebController
                 g.setStatus( Game.Status.ACTIVE );
                 g.setTimeStarted( new Timestamp(System.currentTimeMillis()));
                 gameRepository.save(g);
+
+                // Send notifications to connected clients
+                messagingTemplate.convertAndSend("/topic/updates", "newRound");
             }
 
         });
